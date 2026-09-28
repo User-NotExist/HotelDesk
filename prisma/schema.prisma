@@ -70,6 +70,7 @@ model Stay {
 }
 
 model StayGuest {
+  id        String        @id @default(uuid())
   stay_id   String
   guest_id  String
   role      StayGuestRole @default(ADDITIONAL)
@@ -81,6 +82,6 @@ model StayGuest {
 
   // App operations must keep exactly one active PRIMARY member per stay.
 
-  @@id([stay_id, guest_id])
+  @@index([stay_id, guest_id])
   @@index([guest_id])
 }
