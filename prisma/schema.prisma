@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Guest {
+  id          String    @id @default(uuid())
+  first_name  String
+  middle_name String?
+  last_name   String
+  dob         DateTime?
+  sex         String?
+  phone       String?
+  email       String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  stays StayGuest[]
+}
+
+model Room {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  room_type         String
+  max_occupant      Int
+  is_out_of_service Boolean  @default(false)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  stays Stay[]
+}
+
+enum StayStatus {
+  RESERVED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum StayGuestRole {
+  PRIMARY
+  ADDITIONAL
+}
+
+model Stay {
+  id             String     @id @default(uuid())
+  room_id        String
+  // Hotel dates: arrival is inclusive and departure is exclusive.
+  // Store each date as midnight UTC; actual times go below.
+  // App operations must require departure after arrival, prevent overlapping
+  // RESERVED/CHECKED_IN stays, and reject out-of-service rooms.
+  arrival_date   DateTime
+  departure_date DateTime
+  checked_in_at  DateTime?
+  checked_out_at DateTime?
+  status         StayStatus @default(RESERVED)
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+
+  room   Room        @relation(fields: [room_id], references: [id], onDelete: Restrict)
+  guests StayGuest[]
+
+  // App operations must enforce valid status transitions and room capacity.
+
+  @@index([room_id, status, arrival_date, departure_date])
+}
+
+model StayGuest {
+  stay_id   String
+  guest_id  String
+  role      StayGuestRole @default(ADDITIONAL)
+  joined_at DateTime      @default(now())
+  left_at   DateTime?
+
+  stay  Stay  @relation(fields: [stay_id], references: [id], onDelete: Restrict)
+  guest Guest @relation(fields: [guest_id], references: [id], onDelete: Restrict)
+
+  // App operations must keep exactly one active PRIMARY member per stay.
+
+  @@id([stay_id, guest_id])
+  @@index([guest_id])
+}
