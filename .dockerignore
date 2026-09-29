@@ -1,0 +1,14 @@
+.git
+.env*
+node_modules
+.svelte-kit
+build
+generated
+dev.db*
+prisma/dev.db*
+.agents
+.claude
+.codex
+.windsurf
+.vscode
+README.md

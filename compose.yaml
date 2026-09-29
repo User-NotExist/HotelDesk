@@ -1,0 +1,27 @@
+name: hotel-desk
+
+services:
+  app:
+    build: .
+    image: hotel-desk:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:-./.env.docker}
+    ports:
+      - '${HOST_PORT:-3000}:3000'
+    volumes:
+      - hotel-desk-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - "const r = await fetch('http://127.0.0.1:3000/'); if (!r.ok) process.exit(1)"
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
+volumes:
+  hotel-desk-data:
+    name: hotel-desk-data

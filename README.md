@@ -19,6 +19,18 @@ Run `bun run build`, then `bun run start` on the hotel server. Set `HOST=0.0.0.0
 
 Back up `dev.db` regularly. The database file and `.env` are excluded from Git. To apply future schema migrations on an existing installation, run `bunx --bun prisma migrate deploy --config prisma7.config.ts` and then `bun run db:generate` before starting the server.
 
+## Docker and Jenkins deployment
+
+The `Dockerfile` builds and verifies the app with Bun. `compose.yaml` runs it on port 3000 and stores SQLite data in the `hotel-desk-data` volume. For a manual deployment, copy `.env.docker.example` to `.env.docker`. Set `ORIGIN` to the exact URL in the browser, including scheme, hostname or IP, and port (for example, `http://192.168.1.20:3000`). SvelteKit rejects form submissions with HTTP 403 when this differs. If `HOST_PORT` changes, include that port in `ORIGIN`. Then run:
+
+```sh
+docker compose build app
+docker compose run --rm --no-deps app bunx --bun prisma migrate deploy --config prisma7.config.ts
+docker compose up -d --wait app
+```
+
+For Jenkins, create one **Secret file** credential with ID `hotel-desk-env` containing the same env file. Configure a Pipeline job from this repository's `Jenkinsfile`. The Jenkins agent needs Docker Compose access to the Docker host that will run the app. The pipeline builds and checks the image, applies pending migrations, and updates the Compose service while retaining the `hotel-desk-data` volume. Keep the credential's `ORIGIN` equal to the browser URL, and expose port 3000 only on the trusted hotel LAN. Back up the Docker volume regularly.
+
 ## Checks
 
 Run `bun run check`, `bun run lint`, `bun run test`, and `bun run build`.
